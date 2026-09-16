@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Standalone GitHub-Pages build. Backend: https://YOUR-BACKEND-URL -->
+<title>Dermasight AI · MARF + CBAM Skin Lesion Diagnostic Workstation</title>
+  <meta name="description" content="Clinical-grade AI skin lesion diagnostic workstation powered by MARF + CBAM MobileNetV3-Large 8-class dermoscopy and histopathology model." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230066cc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 3v4M12 17v4M3 12h4M17 12h4'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%230066cc' fill-opacity='0.4'/%3E%3C/svg%3E" />
+  
+  <!-- Apple Typography: SF Pro / Inter (weights 300, 400, 600, 700) with ss03 OpenType feature -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+/* ============================================================================
+   Apple Human Interface Design System for Skin Cancer Diagnostic Workstation
+   Based on specifications in .agents/app-design.md
+   ----------------------------------------------------------------------------
+   Key Principles:
+     • Reverent product/specimen presentation framed by near-invisible UI.
+     • Alternating canvas (Parchment #f5f5f7, Pure White #ffffff, Black #000000).
+     • Single Action Blue (#0066cc) interactive grammar.
+     • SF Pro / Inter typography: headlines at 600 with negative tracking;
+       body copy at 17px (400 / 1.47); weight 500 deliberately absent.
+     • Zero decorative gradients or generic card shadows.
+     • Single system drop-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0 on images.
+     • Signature micro-interaction: transform: scale(0.95) on press.
+   ========================================================================== */
+
+:root {
+  /* Surface & Canvas Tokens */
+  --canvas: #ffffff;
+  --canvas-parchment: #f5f5f7;
+  --surface-pearl: #fafafc;
+  --surface-tile-1: #272729;
+  --surface-tile-2: #2a2a2c;
+  --surface-tile-3: #252527;
+  --surface-black: #000000;
+  --surface-chip-translucent: rgba(210, 210, 215, 0.64);
+
+  /* Primary Interactive & Brand */
+  --primary: #0066cc;                   /* Action Blue */
+  --primary-focus: #0071e3;             /* Focus Blue */
+  --primary-on-dark: #2997ff;           /* Sky Link Blue */
+
+  /* Text & Ink Tokens */
+  --ink: #1d1d1f;                       /* Near-Black Ink */
+  --body: #1d1d1f;
+  --body-on-dark: #ffffff;
+  --body-muted: #86868b;                /* Secondary copy */
+  --ink-muted-80: #333333;
+  --ink-muted-48: #6e6e73;              /* Legal & fine print */
+
+  /* Hairlines & Dividers */
+  --divider-soft: rgba(0, 0, 0, 0.04);
+  --hairline: #e0e0e0;
+  --hairline-dark: rgba(255, 255, 255, 0.12);
+
+  /* Elevation: Exactly ONE drop shadow for specimen/product images */
+  --product-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0px;
+
+  /* Shapes & Radii Scale */
+  --rounded-none: 0px;
+  --rounded-sm: 8px;                    /* Utility buttons, inner image crops */
+  --rounded-md: 11px;                   /* Capsule buttons */
+  --rounded-lg: 18px;                   /* Store utility cards, container cards */
+  --rounded-pill: 9999px;               /* Signature Apple pill CTAs */
+  --rounded-full: 50%;
+
+  /* Clinical Diagnostic Status Accents (Mapped to Apple System Palette) */
+  --accent: #0066cc;                    /* Action / Low risk blue */
+  --accent-green: #34c759;              /* Apple system green */
+  --warn: #ff9500;                      /* Apple system orange */
+  --danger: #ff3b30;                    /* Apple system red */
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ============================================================================
+   RESET & BASE
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth;
+  background-color: var(--canvas-parchment);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-feature-settings: "ss03";
+  background-color: var(--canvas-parchment);
+  color: var(--ink);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Screen Reader Skip Link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 20px;
+  background: var(--surface-black);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: var(--rounded-pill);
+  font-size: 14px;
+  font-weight: 400;
+  z-index: 1000;
+  transition: top 0.2s ease;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 16px;
+  outline: 2px solid var(--primary-focus);
+}
+
+/* Apple Keyboard Focus Ring */
+:focus-visible {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   TOPBAR NAVIGATION (Apple Global Nav & Frosted Sub-Nav)
+   ========================================================================== */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  height: 52px;
+  background: rgba(245, 245, 247, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--rounded-full);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.brand h1 {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.version-tag {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-muted-48);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 7px;
+  border-radius: var(--rounded-pill);
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  font-weight: 400;
+  letter-spacing: -0.12px;
+}
+
+@media (max-width: 860px) {
+  .brand-sub { display: none; }
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backend-badge {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-muted-80);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  padding: 5px 14px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  letter-spacing: -0.12px;
+}
+
+.backend-badge b {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rounded-full);
+  background: var(--accent-green);
+}
+
+.badge-dot.pulse {
+  animation: apple-dot-pulse 2s infinite ease-in-out;
+}
+
+@keyframes apple-dot-pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* ============================================================================
+   MAIN LAYOUT (Parchment Canvas with White Utility Cards)
+   ========================================================================== */
+.layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 24px;
+  padding: 40px 32px 80px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 24px 20px 60px;
+  }
+}
+
+/* Store Utility Card Grammar */
+.card {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-lg);
+  padding: 28px;
+  /* Apple rule: No box-shadows on cards; elevation comes from surface contrast */
+  box-shadow: none;
+  position: relative;
+}
+
+/* Step Header */
+.step-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.step-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(0, 102, 204, 0.08);
+  padding: 3px 8px;
+  border-radius: var(--rounded-sm);
+  letter-spacing: -0.12px;
+}
+
+.step-header h2 {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.step-desc {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  margin-top: 3px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.mode-step-header {
+  margin-top: 36px;
+}
+
+/* ============================================================================
+   LEFT PANEL: DROPZONE & CONFIGURATOR SELECTION
+   ========================================================================== */
+.dropzone {
+  border: 1px dashed #d2d2d7;
+  border-radius: 14px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface-pearl);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  outline: none;
+}
+
+.dropzone:hover, .dropzone:focus-visible {
+  border-color: var(--primary);
+  background: #f0f7ff;
+}
+
+.dropzone.over {
+  border-color: var(--primary-focus);
+  border-style: solid;
+  background: #e5f1fc;
+}
+
+.dz-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.dz-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--rounded-full);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dz-icon-svg {
+  width: 24px;
+  height: 24px;
+}
+
+.dz-prompt {
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.dz-prompt strong {
+  font-weight: 600;
+}
+
+.dz-prompt .link {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dz-formats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.dz-formats span {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-muted-48);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  padding: 2px 7px;
+  border-radius: var(--rounded-sm);
+}
+
+.dz-privacy-note {
+  font-size: 11px;
+  color: var(--ink-muted-48);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+/* Specimen Preview with Apple Product Shadow */
+.preview-wrap {
+  margin-top: 18px;
+}
+
+.preview-card {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.preview-media {
+  width: 100%;
+  max-height: 280px;
+  border-radius: var(--rounded-sm);
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The single system shadow applied to specimen image */
+.preview-media img {
+  width: 100%;
+  height: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+  box-shadow: var(--product-shadow);
+  border-radius: var(--rounded-sm);
+}
+
+.preview-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  padding: 10px 4px 2px;
+  letter-spacing: -0.12px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ============================================================================
+   DIAGNOSTIC PIPELINE (Apple Configurator Option Chips)
+   ========================================================================== */
+.mode-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.mode-card {
+  display: block;
+  cursor: pointer;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  position: relative;
+}
+
+.mode-card:hover {
+  border-color: #b0b0b5;
+}
+
+.mode-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-card:has(input:checked) {
+  border: 2px solid var(--primary);
+  background: var(--canvas);
+  padding: 15px 17px; /* preserve optical height on 2px border */
+}
+
+.mode-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mode-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-radio-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--rounded-full);
+  border: 1.5px solid #d2d2d7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease;
+}
+
+.mode-card:has(input:checked) .mode-radio-indicator {
+  border-color: var(--primary);
+}
+
+.mode-card:has(input:checked) .mode-radio-indicator::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+}
+
+.mode-title-row strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+}
+
+.mode-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: var(--rounded-pill);
+  background: rgba(0, 102, 204, 0.08);
+  color: var(--primary);
+  margin-left: auto;
+}
+
+.mode-chip.fast {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink-muted-48);
+}
+
+.mode-content p {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  line-height: 1.42;
+  padding-left: 28px;
+}
+
+/* ============================================================================
+   PRIMARY ACTION BUTTON (button-primary: Action Blue Pill)
+   ========================================================================== */
+.btn-primary {
+  width: 100%;
+  padding: 13px 24px;
+  font-family: var(--font-family);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  cursor: pointer;
+  color: #ffffff;
+  background-color: var(--primary);
+  border: none;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  outline: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.94;
+}
+
+/* Apple rule: transform: scale(0.95) is the system-wide micro-interaction */
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* Progress Indicator */
+.progress {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-track {
+  height: 4px;
+  border-radius: var(--rounded-pill);
+  background: #e5e5ea;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress .bar {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: var(--rounded-pill);
+  background: var(--primary);
+  animation: apple-bar-slide 1.2s infinite ease-in-out;
+}
+
+@keyframes apple-bar-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+.progress-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+  animation: apple-dot-pulse 1.2s infinite;
+}
+
+.progress p {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  text-align: center;
+}
+
+/* Inline Error */
+.error {
+  margin-top: 16px;
+  color: #c91818;
+  background: #fdf2f2;
+  border: 1px solid #f8b4b4;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.privacy-callout {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--ink-muted-48);
+}
+
+.privacy-callout svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.privacy-callout .hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-muted-48);
+}
+
+/* ============================================================================
+   RIGHT PANEL: DIAGNOSTIC RESULTS
+   ========================================================================== */
+.panel-right {
+  min-height: 620px;
+}
+
+/* Empty State */
+.empty {
+  text-align: center;
+  padding: 64px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-graphic {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.reticle-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--rounded-full);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  position: relative;
+}
+
+.reticle-svg {
+  width: 64px;
+  height: 64px;
+}
+
+.scan-beam {
+  display: none; /* No artificial sci-fi lasers in Apple design */
+}
+
+.empty h3 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.empty-lead {
+  font-size: 17px;
+  color: var(--ink-muted-48);
+  max-width: 520px;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
+  margin-bottom: 36px;
+}
+
+.pipeline-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 580px;
+  text-align: left;
+}
+
+@media (max-width: 640px) {
+  .pipeline-features {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pf-item {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pf-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.pf-item strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.pf-item span {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+
+/* ============================================================================
+   ACTIVE RESULTS (Apple Product Gallery Aesthetics)
+   ========================================================================== */
+.results-section {
+  margin-top: 36px;
+}
+
+.section-title-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.section-title-wrap h3,
+.results-section h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.022em;
+}
+
+.section-badge {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+
+/* Verdict & Cancer Score Header */
+.verdict-row {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 680px) {
+  .verdict-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.verdict, .score-card {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.verdict-meta-top, .score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sub-label, .score-header small {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted-48);
+}
+
+.verdict-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--rounded-pill);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink-muted-80);
+}
+
+.verdict h2 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 6px 0 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+/* Verdict Risk Dynamic Colors */
+.verdict.low h2 { color: var(--accent-green); }
+.verdict.moderate h2 { color: var(--warn); }
+.verdict.high h2 { color: var(--danger); }
+
+.conf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted-48);
+}
+
+.conf-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.conf-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e5ea;
+  border-radius: var(--rounded-pill);
+  overflow: hidden;
+}
+
+.conf-bar div {
+  height: 100%;
+  width: 0;
+  border-radius: var(--rounded-pill);
+  background: var(--primary);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Score Card & Apple Minimal Gauge */
+.score-card {
+  align-items: center;
+  text-align: center;
+}
+
+.score-tooltip {
+  cursor: help;
+  color: var(--ink-muted-48);
+}
+
+.gauge {
+  position: relative;
+  width: 140px;
+  margin: 4px auto 0;
+}
+
+.gauge svg {
+  width: 100%;
+  display: block;
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: #e5e5ea;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.gauge-fg {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 157;
+  stroke-dashoffset: 157;
+  transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
+}
+
+.gauge strong {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.risk-wrap {
+  margin-top: 8px;
+}
+
+.risk {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: var(--rounded-pill);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.12px;
+}
+
+.risk.low {
+  background: rgba(52, 199, 89, 0.12);
+  color: #248a3d;
+}
+
+.risk.moderate {
+  background: rgba(255, 149, 0, 0.12);
+  color: #c77700;
+}
+
+.risk.high {
+  background: rgba(255, 59, 48, 0.12);
+  color: #d70015;
+}
+
+/* Telemetry Strip */
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.meta-chip {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  padding: 6px 14px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+}
+
+.meta-chip strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Class Probability Distribution */
+.prob-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prow {
+  display: grid;
+  grid-template-columns: 210px 1fr 64px;
+  gap: 12px;
+  align-items: center;
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: border-color 0.15s ease;
+}
+
+.prow:hover {
+  border-color: #b0b0b5;
+}
+
+.prow.top {
+  background: #ffffff;
+  border-color: var(--primary);
+}
+
+.prow .nm {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prow .nm.mal {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.prow .tr {
+  height: 6px;
+  background: #e5e5ea;
+  border-radius: var(--rounded-pill);
+  overflow: hidden;
+}
+
+.prow .fl {
+  height: 100%;
+  width: 0;
+  border-radius: var(--rounded-pill);
+  background: var(--primary);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.prow.top .fl {
+  background: var(--danger);
+}
+
+.prow .pc {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Patch Statistics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.stat {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.stat b {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.stat span {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  display: block;
+  margin-top: 4px;
+}
+
+/* Visual Gallery (Product Renders with Apple Product Shadow) */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.gitem {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: zoom-in;
+  transition: border-color 0.2s ease;
+}
+
+.gitem:hover {
+  border-color: var(--primary);
+}
+
+.gitem img {
+  width: 100%;
+  height: 190px;
+  object-fit: contain;
+  background: #ffffff;
+  display: block;
+  box-shadow: var(--product-shadow);
+}
+
+.gitem p {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  border-top: 1px solid var(--hairline);
+  background: var(--surface-pearl);
+}
+
+/* Suspicious Patches */
+.patches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pitem {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.pitem:hover {
+  border-color: #b0b0b5;
+}
+
+.pitem img {
+  width: 100%;
+  height: 125px;
+  object-fit: cover;
+  display: block;
+  cursor: zoom-in;
+  background: #ffffff;
+  box-shadow: var(--product-shadow);
+}
+
+.pitem .pi {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+
+.pitem .pi b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.pitem .pi .sc-high { color: var(--danger); font-weight: 600; }
+.pitem .pi .sc-med { color: var(--warn); font-weight: 600; }
+.pitem .pi .sc-low { color: var(--accent-green); font-weight: 600; }
+
+/* Suspicious Morphological Regions */
+.regions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.region {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+
+.region .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--rounded-full);
+  flex-shrink: 0;
+}
+
+.dot.HIGH { background: var(--danger); }
+.dot.MED { background: var(--warn); }
+.dot.LOW { background: var(--accent-green); }
+
+/* Disclaimer (Apple Human Interface Guidance Card) */
+.disclaimer-card {
+  margin-top: 36px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  padding: 16px 20px;
+  border-radius: 14px;
+}
+
+.disclaimer-icon {
+  color: var(--warn);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.disclaimer-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.disclaimer-text p {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   FOOTER (Parchment background, dense link leading 2.41)
+   ========================================================================== */
+.app-footer {
+  background: var(--canvas-parchment);
+  border-top: 1px solid var(--hairline);
+  padding: 32px 32px 48px;
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  margin-top: auto;
+}
+
+.footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-specs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footer-sep {
+  opacity: 0.4;
+}
+
+/* ============================================================================
+   LIGHTBOX MODAL (Apple Backdrop Blur & Minimal Controls)
+   ========================================================================== */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.lb-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.lb-content {
+  position: relative;
+  z-index: 1001;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lb-close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  background: var(--surface-chip-translucent);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.lb-close:active {
+  transform: scale(0.95);
+}
+
+.lb-img-wrap {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lb-img-wrap img {
+  max-width: 88vw;
+  max-height: 72vh;
+  object-fit: contain;
+  display: block;
+}
+
+.lb-caption-bar {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.lb-caption-bar p {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.015em;
+}
+
+.lb-shortcut {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+</style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to diagnostic interface</a>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>
+          <circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.35"/>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <div class="brand-title-wrap">
+          <h1>Dermasight AI</h1>
+          <span class="version-tag">MARF · CBAM v3</span>
+        </div>
+        <p class="brand-sub">MobileNetV3-Large · 8-Class Dermoscopy &amp; Histopathology Diagnostic System</p>
+      </div>
+    </div>
+    
+    <div class="header-status">
+      <div class="backend-badge" id="backendBadge" title="Model runtime and hardware inference status">
+        <span class="badge-dot pulse"></span> Initializing engine…
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Layout -->
+  <main id="main-content" class="layout">
+
+    <!-- ============ LEFT COLUMN: Upload & Diagnosis Setup ============ -->
+    <section class="card panel-left" aria-labelledby="step-upload-title">
+      <div class="step-header">
+        <span class="step-badge">01</span>
+        <div>
+          <h2 id="step-upload-title">Upload Lesion Specimen</h2>
+          <p class="step-desc">Dermoscopic, macroscopic, or histopathological imagery</p>
+        </div>
+      </div>
+
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload skin lesion image file">
+        <div class="dz-inner">
+          <div class="dz-icon-wrap" aria-hidden="true">
+            <svg class="dz-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="dz-prompt"><strong>Drag &amp; drop specimen here</strong>, or <span class="link">browse local files</span></p>
+          <div class="dz-formats">
+            <span>PNG</span><span>JPG</span><span>WEBP</span><span>TIF</span><span>BMP</span>
+          </div>
+          <p class="dz-privacy-note">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Isolated temporary session · Auto-deleted upon tab closure
+          </p>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" hidden />
+      </div>
+
+      <div id="previewWrap" class="preview-wrap hidden">
+        <div class="preview-card">
+          <div class="preview-media">
+            <img id="previewImg" alt="Uploaded skin lesion preview" />
+          </div>
+          <div class="preview-meta">
+            <span class="meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> <span id="previewDims"></span></span>
+            <span class="meta-item session-tag" id="sessionTag"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-header mode-step-header">
+        <span class="step-badge">02</span>
+        <div>
+          <h2>Diagnostic Pipeline</h2>
+          <p class="step-desc">Select spatial analytics granularity</p>
+        </div>
+      </div>
+
+      <div class="mode-row" role="radiogroup" aria-label="Analysis mode">
+        <label class="mode-card">
+          <input type="radio" name="mode" value="full" checked />
+          <div class="mode-content">
+            <div class="mode-title-row">
+              <span class="mode-radio-indicator" aria-hidden="true"></span>
+              <strong>Full Spatial Analysis</strong>
+              <span class="mode-chip">Comprehensive</span>
+            </div>
+            <p>Class prediction, Grad-CAM attention heatmaps, patch-level scoring &amp; suspicious regions.</p>
+          </div>
+        </label>
+        
+        <label class="mode-card">
+          <input type="radio" name="mode" value="quick" />
+          <div class="mode-content">
+            <div class="mode-title-row">
+              <span class="mode-radio-indicator" aria-hidden="true"></span>
+              <strong>Quick Inference</strong>
+              <span class="mode-chip fast">Fast</span>
+            </div>
+            <p>Primary classification and 8-class probability distribution without spatial attention maps.</p>
+          </div>
+        </label>
+      </div>
+
+      <button id="diagnoseBtn" class="btn-primary" disabled>
+        <span class="btn-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <span>Run Diagnostic Inference</span>
+      </button>
+
+      <div id="progress" class="progress hidden" role="status" aria-live="polite">
+        <div class="progress-track"><div class="bar"></div></div>
+        <div class="progress-status">
+          <div class="spinner-pulse" aria-hidden="true"></div>
+          <p id="progressText">Analysing…</p>
+        </div>
+      </div>
+
+      <div id="errorBox" class="error hidden" role="alert"></div>
+
+      <div class="privacy-callout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <p class="hint">Temporary uploads are stored in an isolated RAM/temp folder and deleted immediately on session end or 30 minutes of inactivity.</p>
+      </div>
+    </section>
+
+    <!-- ============ RIGHT COLUMN: Diagnostic Results ============ -->
+    <section class="card panel-right" aria-labelledby="results-title">
+      
+      <!-- Empty State View -->
+      <div id="emptyState" class="empty">
+        <div class="empty-graphic" aria-hidden="true">
+          <div class="reticle-circle">
+            <svg class="reticle-svg" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+              <circle cx="50" cy="50" r="44" stroke-width="1.5" stroke-dasharray="4 6" opacity="0.3"/>
+              <circle cx="50" cy="50" r="32" stroke-width="1.5" opacity="0.5"/>
+              <circle cx="50" cy="50" r="18" stroke-width="1.5" stroke-dasharray="2 4"/>
+              <path d="M50 8v14M50 78v14M8 50h14M78 50h14" stroke-width="1.5"/>
+              <circle cx="50" cy="50" r="3" fill="currentColor"/>
+            </svg>
+            <div class="scan-beam"></div>
+          </div>
+        </div>
+        <h3 id="results-title">Awaiting Specimen Input</h3>
+        <p class="empty-lead">Upload a dermoscopic or histopathological image on the left and trigger inference to view multi-class probabilities, attention heatmaps, and patch analytics.</p>
+        
+        <div class="pipeline-features">
+          <div class="pf-item">
+            <span class="pf-bullet"></span>
+            <div><strong>MobileNetV3-Large</strong><span>Lightweight high-efficiency backbone</span></div>
+          </div>
+          <div class="pf-item">
+            <span class="pf-bullet"></span>
+            <div><strong>MARF Module</strong><span>Multi-scale receptive field feature fusion</span></div>
+          </div>
+          <div class="pf-item">
+            <span class="pf-bullet"></span>
+            <div><strong>CBAM Attention</strong><span>Channel &amp; spatial attention pooling</span></div>
+          </div>
+          <div class="pf-item">
+            <span class="pf-bullet"></span>
+            <div><strong>Grad-CAM &amp; Patches</strong><span>Spatial risk mapping and patch clustering</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagnostic Results View -->
+      <div id="results" class="hidden">
+        
+        <!-- Primary Verdict & Cancer Score Header -->
+        <div class="verdict-row">
+          <div class="verdict" id="verdictCard">
+            <div class="verdict-meta-top">
+              <span class="sub-label">Differential Classification</span>
+              <span class="verdict-pill">Top Prediction</span>
+            </div>
+            <h2 id="predName">—</h2>
+            <div class="conf-section">
+              <div class="conf-header">
+                <span class="conf-label">Confidence Score</span>
+                <span id="confVal" class="conf-value">—</span>
+              </div>
+              <div class="conf-bar" aria-label="Confidence score bar">
+                <div id="confFill"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="score-card" id="scoreCard">
+            <div class="score-header">
+              <small>Malignancy Cancer Score</small>
+              <span class="score-tooltip" title="Aggregate probability of malignant classes: Basal Cell Carcinoma, Melanoma, Squamous Cell Carcinoma" aria-label="Information">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </span>
+            </div>
+            <div class="gauge">
+              <svg viewBox="0 0 120 70" aria-hidden="true">
+                <path d="M10 60 A 50 50 0 0 1 110 60" class="gauge-bg"/>
+                <path id="gaugeArc" d="M10 60 A 50 50 0 0 1 110 60" class="gauge-fg"/>
+              </svg>
+              <strong id="scoreVal">—</strong>
+            </div>
+            <div class="risk-wrap">
+              <span id="riskBadge" class="risk">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry Strip -->
+        <div class="meta-row">
+          <div class="meta-chip">
+            <span class="chip-dot"></span>
+            <span class="chip-label">Modality:</span>
+            <strong id="modalityVal">—</strong>
+            <small id="modalityAlpha"></small>
+          </div>
+          <div class="meta-chip">
+            <span class="chip-dot"></span>
+            <span class="chip-label">Engine:</span>
+            <strong id="engineVal">—</strong>
+          </div>
+          <div class="meta-chip">
+            <span class="chip-dot"></span>
+            <span class="chip-label">Latency:</span>
+            <span id="timeVal">—</span>
+          </div>
+        </div>
+
+        <!-- Class Probabilities Section -->
+        <div class="results-section">
+          <div class="section-title-wrap">
+            <h3>Class Probability Distribution</h3>
+            <span class="section-badge">8 Diagnostic Classes</span>
+          </div>
+          <div id="probBars" class="prob-bars"></div>
+        </div>
+
+        <!-- Patch Statistics Grid -->
+        <div id="patchStats" class="stats-grid hidden"></div>
+
+        <!-- Spatial Heatmap Gallery -->
+        <div class="results-section">
+          <h3 id="galleryTitle" class="hidden">Spatial Interpretability Maps</h3>
+          <div id="gallery" class="gallery"></div>
+        </div>
+
+        <!-- High-Risk Patches -->
+        <div class="results-section">
+          <h3 id="topTitle" class="hidden">High-Risk Suspicious Patches</h3>
+          <div id="topPatches" class="patches"></div>
+        </div>
+
+        <!-- Suspicious Regions -->
+        <div class="results-section">
+          <h3 id="regionTitle" class="hidden">Suspicious Morphological Regions</h3>
+          <div id="regionList" class="regions"></div>
+        </div>
+
+        <!-- Clinical Research Disclaimer -->
+        <div class="disclaimer-card" role="note">
+          <div class="disclaimer-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div class="disclaimer-text">
+            <strong>Investigational Research System — Not for Primary Clinical Diagnosis</strong>
+            <p>This software is an experimental deep-learning prototype designed for computer-aided diagnostic evaluation. Final clinical diagnoses must be determined by licensed dermatologists and histopathologists through comprehensive physical and histological examination.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-specs">
+        <span>Model: MARF + CBAM MobileNetV3-Large</span>
+        <span class="footer-sep">·</span>
+        <span>8 Diagnostic Classes</span>
+        <span class="footer-sep">·</span>
+        <span>Secure Ephemeral Session</span>
+      </div>
+      <div class="footer-copy">
+        <span>Clinical Decision Support Research Prototype</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Enlarged Diagnostic Image">
+    <div class="lb-backdrop"></div>
+    <div class="lb-content">
+      <button class="lb-close" id="lbClose" aria-label="Close enlarged preview">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="lb-img-wrap">
+        <img id="lbImg" alt="Enlarged diagnostic visualization" />
+      </div>
+      <div class="lb-caption-bar">
+        <p id="lbCap"></p>
+        <span class="lb-shortcut">Press Esc or click backdrop to close</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+/* ============================================================================
+   Skin Cancer Detection — frontend
+   ----------------------------------------------------------------------------
+   API_BASE: where the Python backend lives.
+     • Same-origin deploy (Render / Railway / Docker / localhost): leave as "".
+     • GitHub Pages (static frontend) + backend elsewhere: set to your API URL,
+       e.g.  const API_BASE = "https://skin-cancer-api.onrender.com";
+   ========================================================================== */
+const API_BASE = "https://YOUR-BACKEND-URL";
+
+const $ = (id) => document.getElementById(id);
+const api = (path) => `${API_BASE}${path}`;
+
+let sessionId = null;
+let hasImage = false;
+
+/* ---------------- health / backend badge ---------------- */
+fetch(api("/api/health"))
+  .then((r) => r.json())
+  .then((h) => {
+    $("backendBadge").innerHTML =
+      `engine: <b>${h.backend === "torch" ? "PyTorch" : "ONNX Runtime"}</b>` +
+      (h.gradcam ? " · Grad-CAM ✓" : " · Grad-CAM n/a");
+  })
+  .catch(() => { $("backendBadge").textContent = "backend offline"; });
+
+/* ---------------- upload ---------------- */
+const dz = $("dropzone"), fi = $("fileInput");
+dz.addEventListener("click", () => fi.click());
+dz.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fi.click(); } });
+["dragover", "dragenter"].forEach((e) => dz.addEventListener(e, (ev) => { ev.preventDefault(); dz.classList.add("over"); }));
+["dragleave", "drop"].forEach((e) => dz.addEventListener(e, (ev) => { ev.preventDefault(); dz.classList.remove("over"); }));
+dz.addEventListener("drop", (ev) => { if (ev.dataTransfer.files[0]) uploadFile(ev.dataTransfer.files[0]); });
+fi.addEventListener("change", () => { if (fi.files[0]) uploadFile(fi.files[0]); });
+
+function uploadFile(file) {
+  showError("");
+  const fd = new FormData();
+  fd.append("image", file);
+  if (sessionId) fd.append("session_id", sessionId);
+  $("progress").classList.remove("hidden");
+  $("progressText").textContent = "Uploading to temp folder…";
+  fetch(api("/api/upload"), { method: "POST", body: fd })
+    .then(async (r) => { const j = await r.json(); if (!r.ok) throw new Error(j.error || "Upload failed"); return j; })
+    .then((j) => {
+      sessionId = j.session_id;
+      hasImage = true;
+      $("previewImg").src = j.preview;
+      $("previewDims").textContent = `${j.width} × ${j.height}px`;
+      $("sessionTag").textContent = `temp session ${sessionId.slice(0, 8)}…`;
+      $("previewWrap").classList.remove("hidden");
+      $("diagnoseBtn").disabled = false;
+    })
+    .catch((e) => showError(e.message))
+    .finally(() => $("progress").classList.add("hidden"));
+}
+
+/* ---------------- diagnose ---------------- */
+$("diagnoseBtn").addEventListener("click", () => {
+  if (!hasImage || !sessionId) return;
+  showError("");
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  $("progress").classList.remove("hidden");
+  $("progressText").textContent = mode === "quick"
+    ? "Running model (quick)…" : "Running model + patch analysis + heatmaps… (may take ~30–90s on CPU)";
+  $("diagnoseBtn").disabled = true;
+  const fd = new FormData();
+  fd.append("session_id", sessionId);
+  fd.append("mode", mode);
+  fetch(api("/api/diagnose"), { method: "POST", body: fd })
+    .then(async (r) => { const j = await r.json(); if (!r.ok) throw new Error(j.error || "Diagnosis failed"); return j; })
+    .then(renderResults)
+    .catch((e) => showError(e.message))
+    .finally(() => { $("progress").classList.add("hidden"); $("diagnoseBtn").disabled = false; });
+});
+
+function showError(msg) {
+  const box = $("errorBox");
+  if (!msg) { box.classList.add("hidden"); return; }
+  box.textContent = msg;
+  box.classList.remove("hidden");
+}
+
+/* ---------------- results ---------------- */
+const GALLERY = [
+  ["gradcam", "Grad-CAM (whole image)"],
+  ["gradcam_overlay", "Grad-CAM overlay"],
+  ["heatmap", "Cancer probability heatmap"],
+  ["heatmap_overlay", "Heatmap overlay"],
+  ["risk_map", "Patch-wise cancer risk map"],
+  ["clinical", "AI clinical summary"],
+];
+
+function renderResults(r) {
+  $("emptyState").classList.add("hidden");
+  $("results").classList.remove("hidden");
+
+  // verdict
+  const risk = (r.risk || "Low").toLowerCase();
+  $("verdictCard").className = "verdict " + risk;
+  $("predName").textContent = (r.prediction || "—").replace(/_/g, " ");
+  $("confVal").textContent = pct(r.confidence);
+  requestAnimationFrame(() => { $("confFill").style.width = (r.confidence * 100).toFixed(1) + "%"; });
+
+  // gauge
+  $("scoreVal").textContent = (r.cancer_score * 100).toFixed(1) + "%";
+  const arc = $("gaugeArc");
+  arc.style.strokeDashoffset = 157 - 157 * Math.min(1, r.cancer_score);
+  arc.style.stroke = risk === "high" ? "var(--danger)" : risk === "moderate" ? "var(--warn)" : "var(--accent)";
+  const rb = $("riskBadge");
+  rb.textContent = r.risk + " risk";
+  rb.className = "risk " + risk;
+
+  // meta
+  $("modalityVal").textContent = r.modality_hint || "—";
+  $("modalityAlpha").textContent = r.modality_alpha != null ? `(α=${r.modality_alpha.toFixed(2)})` : "";
+  $("engineVal").textContent = r.backend === "torch" ? "PyTorch" : "ONNX Runtime";
+  $("timeVal").textContent = r.timings && r.timings.total != null ? `${r.timings.total}s total` : "—";
+
+  // probabilities
+  const bars = $("probBars");
+  bars.innerHTML = "";
+  const topIdx = r.probabilities.indexOf(r.probabilities.reduce((a, b) => (a.prob > b.prob ? a : b)));
+  r.probabilities.forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "prow" + (i === topIdx ? " top" : "");
+    row.innerHTML = `<span class="nm${p.malignant ? " mal" : ""}" title="${p.malignant ? "malignant class" : "benign class"}">${p.malignant ? "⚠ " : ""}${p.class.replace(/_/g, " ")}</span>
+      <div class="tr"><div class="fl"></div></div><span class="pc">${pct(p.prob)}</span>`;
+    bars.appendChild(row);
+    requestAnimationFrame(() => requestAnimationFrame(() => { row.querySelector(".fl").style.width = (p.prob * 100).toFixed(1) + "%"; }));
+  });
+
+  // patch stats
+  const ps = $("patchStats");
+  if (r.patch_stats) {
+    const s = r.patch_stats;
+    ps.classList.remove("hidden");
+    ps.innerHTML = `
+      <div class="stat"><b>${s.total}</b><span>patches (${s.patch_size}px / stride ${s.stride})</span></div>
+      <div class="stat"><b style="color:var(--danger)">${s.high}</b><span>high-risk</span></div>
+      <div class="stat"><b style="color:var(--warn)">${s.medium}</b><span>medium-risk</span></div>
+      <div class="stat"><b style="color:var(--accent)">${s.low}</b><span>low-risk</span></div>
+      <div class="stat"><b>${(s.avg_cancer_score * 100).toFixed(1)}%</b><span>avg cancer score</span></div>`;
+  } else ps.classList.add("hidden");
+
+  // gallery
+  const gal = $("gallery");
+  gal.innerHTML = "";
+  let n = 0;
+  GALLERY.forEach(([key, cap]) => {
+    if (r.images && r.images[key]) {
+      n++;
+      const d = document.createElement("div");
+      d.className = "gitem";
+      d.innerHTML = `<img src="${r.images[key]}" alt="${cap}" loading="lazy" /><p>${cap}</p>`;
+      d.querySelector("img").addEventListener("click", (e) => openLB(e.target.src, cap));
+      gal.appendChild(d);
+    }
+  });
+  $("galleryTitle").classList.toggle("hidden", n === 0);
+
+  // top patches
+  const tp = $("topPatches");
+  tp.innerHTML = "";
+  (r.top_patches || []).forEach((p) => {
+    const cls = p.cancer_score >= 0.85 ? "sc-high" : p.cancer_score >= 0.6 ? "sc-med" : "sc-low";
+    const d = document.createElement("div");
+    d.className = "pitem";
+    d.innerHTML = `<img src="${p.image}" alt="patch ${p.rank}" loading="lazy" />
+      <div class="pi"><b>#${p.rank} · ${p.prediction.replace(/_/g, " ")}</b>
+      <span class="${cls}">score ${(p.cancer_score * 100).toFixed(1)}%</span> · conf ${pct(p.confidence)}</div>`;
+    d.querySelector("img").addEventListener("click", (e) => openLB(e.target.src, `Patch #${p.rank} — ${p.prediction}`));
+    tp.appendChild(d);
+  });
+  $("topTitle").classList.toggle("hidden", !(r.top_patches || []).length);
+
+  // regions
+  const rl = $("regionList");
+  rl.innerHTML = "";
+  (r.regions || []).forEach((g, i) => {
+    const d = document.createElement("div");
+    d.className = "region";
+    d.innerHTML = `<span class="dot ${g.label}"></span><span><strong>Region ${i + 1}</strong> — ${g.label} risk · score ${(g.score * 100).toFixed(1)}% · box (${g.x}, ${g.y}, ${g.w}×${g.h})</span>`;
+    rl.appendChild(d);
+  });
+  $("regionTitle").classList.toggle("hidden", !(r.regions || []).length);
+
+  $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function pct(x) { return x == null ? "—" : (x * 100).toFixed(1) + "%"; }
+
+/* ---------------- lightbox ---------------- */
+function openLB(src, cap) {
+  $("lbImg").src = src; $("lbCap").textContent = cap;
+  $("lightbox").classList.remove("hidden");
+}
+$("lbClose").addEventListener("click", () => $("lightbox").classList.add("hidden"));
+$("lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox" || e.target.classList.contains("lb-backdrop")) $("lightbox").classList.add("hidden"); });
+window.addEventListener("keydown", (e) => { if (e.key === "Escape") $("lightbox").classList.add("hidden"); });
+
+/* ---------------- cleanup temp session when the site is closed ---------------- */
+function cleanupSession() {
+  if (!sessionId) return;
+  const payload = JSON.stringify({ session_id: sessionId });
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(api("/api/cleanup"), new Blob([payload], { type: "application/json" }));
+    } else {
+      fetch(api("/api/cleanup"), { method: "POST", body: payload, keepalive: true,
+        headers: { "Content-Type": "application/json" } });
+    }
+  } catch (e) { /* tab is closing — nothing more to do */ }
+}
+window.addEventListener("pagehide", cleanupSession);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") cleanupSession(); });
+
+</script>
+</body>
+</html>

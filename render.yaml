@@ -1,0 +1,15 @@
+# One-click deploy on Render: New + -> Blueprint -> point to this repo.
+services:
+  - type: web
+    name: skin-cancer-detection
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 1 --threads 4 --timeout 300
+    envVars:
+      - key: MODEL_BACKEND
+        value: onnx
+      - key: SESSION_TTL_MIN
+        value: "30"
+      - key: PYTHON_VERSION
+        value: 3.11.9

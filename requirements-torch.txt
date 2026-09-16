@@ -1,0 +1,8 @@
+# Full deployment: PyTorch backend (CPU) — enables Grad-CAM overlays.
+# Install with:  pip install -r requirements-torch.txt
+# And set env:   MODEL_BACKEND=torch
+-r requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1
+torchvision==0.20.1
+opencv-python-headless==4.10.0.84

@@ -1,0 +1,16 @@
+# Vercel ignore file
+.git
+.vercel
+__pycache__/
+*.pyc
+docs/
+*.pth
+model/*.pth
+Dockerfile
+render.yaml
+Procfile
+requirements-torch.txt
+build_ghpages.py
+DEPLOY.md
+README.md
+uploads_temp/

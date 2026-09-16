@@ -1,0 +1,1401 @@
+/* ============================================================================
+   Apple Human Interface Design System for Skin Cancer Diagnostic Workstation
+   Based on specifications in .agents/app-design.md
+   ----------------------------------------------------------------------------
+   Key Principles:
+     • Reverent product/specimen presentation framed by near-invisible UI.
+     • Alternating canvas (Parchment #f5f5f7, Pure White #ffffff, Black #000000).
+     • Single Action Blue (#0066cc) interactive grammar.
+     • SF Pro / Inter typography: headlines at 600 with negative tracking;
+       body copy at 17px (400 / 1.47); weight 500 deliberately absent.
+     • Zero decorative gradients or generic card shadows.
+     • Single system drop-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0 on images.
+     • Signature micro-interaction: transform: scale(0.95) on press.
+   ========================================================================== */
+
+:root {
+  /* Surface & Canvas Tokens */
+  --canvas: #ffffff;
+  --canvas-parchment: #f5f5f7;
+  --surface-pearl: #fafafc;
+  --surface-tile-1: #272729;
+  --surface-tile-2: #2a2a2c;
+  --surface-tile-3: #252527;
+  --surface-black: #000000;
+  --surface-chip-translucent: rgba(210, 210, 215, 0.64);
+
+  /* Primary Interactive & Brand */
+  --primary: #0066cc;                   /* Action Blue */
+  --primary-focus: #0071e3;             /* Focus Blue */
+  --primary-on-dark: #2997ff;           /* Sky Link Blue */
+
+  /* Text & Ink Tokens */
+  --ink: #1d1d1f;                       /* Near-Black Ink */
+  --body: #1d1d1f;
+  --body-on-dark: #ffffff;
+  --body-muted: #86868b;                /* Secondary copy */
+  --ink-muted-80: #333333;
+  --ink-muted-48: #6e6e73;              /* Legal & fine print */
+
+  /* Hairlines & Dividers */
+  --divider-soft: rgba(0, 0, 0, 0.04);
+  --hairline: #e0e0e0;
+  --hairline-dark: rgba(255, 255, 255, 0.12);
+
+  /* Elevation: Exactly ONE drop shadow for specimen/product images */
+  --product-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0px;
+
+  /* Shapes & Radii Scale */
+  --rounded-none: 0px;
+  --rounded-sm: 8px;                    /* Utility buttons, inner image crops */
+  --rounded-md: 11px;                   /* Capsule buttons */
+  --rounded-lg: 18px;                   /* Store utility cards, container cards */
+  --rounded-pill: 9999px;               /* Signature Apple pill CTAs */
+  --rounded-full: 50%;
+
+  /* Clinical Diagnostic Status Accents (Mapped to Apple System Palette) */
+  --accent: #0066cc;                    /* Action / Low risk blue */
+  --accent-green: #34c759;              /* Apple system green */
+  --warn: #ff9500;                      /* Apple system orange */
+  --danger: #ff3b30;                    /* Apple system red */
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ============================================================================
+   RESET & BASE
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth;
+  background-color: var(--canvas-parchment);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-feature-settings: "ss03";
+  background-color: var(--canvas-parchment);
+  color: var(--ink);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Screen Reader Skip Link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 20px;
+  background: var(--surface-black);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: var(--rounded-pill);
+  font-size: 14px;
+  font-weight: 400;
+  z-index: 1000;
+  transition: top 0.2s ease;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 16px;
+  outline: 2px solid var(--primary-focus);
+}
+
+/* Apple Keyboard Focus Ring */
+:focus-visible {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   TOPBAR NAVIGATION (Apple Global Nav & Frosted Sub-Nav)
+   ========================================================================== */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  height: 52px;
+  background: rgba(245, 245, 247, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--rounded-full);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.brand h1 {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.version-tag {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-muted-48);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 7px;
+  border-radius: var(--rounded-pill);
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  font-weight: 400;
+  letter-spacing: -0.12px;
+}
+
+@media (max-width: 860px) {
+  .brand-sub { display: none; }
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backend-badge {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-muted-80);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  padding: 5px 14px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  letter-spacing: -0.12px;
+}
+
+.backend-badge b {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rounded-full);
+  background: var(--accent-green);
+}
+
+.badge-dot.pulse {
+  animation: apple-dot-pulse 2s infinite ease-in-out;
+}
+
+@keyframes apple-dot-pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* ============================================================================
+   MAIN LAYOUT (Parchment Canvas with White Utility Cards)
+   ========================================================================== */
+.layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 24px;
+  padding: 40px 32px 80px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 24px 20px 60px;
+  }
+}
+
+/* Store Utility Card Grammar */
+.card {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-lg);
+  padding: 28px;
+  /* Apple rule: No box-shadows on cards; elevation comes from surface contrast */
+  box-shadow: none;
+  position: relative;
+}
+
+/* Step Header */
+.step-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.step-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(0, 102, 204, 0.08);
+  padding: 3px 8px;
+  border-radius: var(--rounded-sm);
+  letter-spacing: -0.12px;
+}
+
+.step-header h2 {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.step-desc {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  margin-top: 3px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.mode-step-header {
+  margin-top: 36px;
+}
+
+/* ============================================================================
+   LEFT PANEL: DROPZONE & CONFIGURATOR SELECTION
+   ========================================================================== */
+.dropzone {
+  border: 1px dashed #d2d2d7;
+  border-radius: 14px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface-pearl);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  outline: none;
+}
+
+.dropzone:hover, .dropzone:focus-visible {
+  border-color: var(--primary);
+  background: #f0f7ff;
+}
+
+.dropzone.over {
+  border-color: var(--primary-focus);
+  border-style: solid;
+  background: #e5f1fc;
+}
+
+.dz-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.dz-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--rounded-full);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dz-icon-svg {
+  width: 24px;
+  height: 24px;
+}
+
+.dz-prompt {
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.dz-prompt strong {
+  font-weight: 600;
+}
+
+.dz-prompt .link {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dz-formats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.dz-formats span {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-muted-48);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  padding: 2px 7px;
+  border-radius: var(--rounded-sm);
+}
+
+.dz-privacy-note {
+  font-size: 11px;
+  color: var(--ink-muted-48);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+/* Specimen Preview with Apple Product Shadow */
+.preview-wrap {
+  margin-top: 18px;
+}
+
+.preview-card {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.preview-media {
+  width: 100%;
+  max-height: 280px;
+  border-radius: var(--rounded-sm);
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The single system shadow applied to specimen image */
+.preview-media img {
+  width: 100%;
+  height: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+  box-shadow: var(--product-shadow);
+  border-radius: var(--rounded-sm);
+}
+
+.preview-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  padding: 10px 4px 2px;
+  letter-spacing: -0.12px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ============================================================================
+   DIAGNOSTIC PIPELINE (Apple Configurator Option Chips)
+   ========================================================================== */
+.mode-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.mode-card {
+  display: block;
+  cursor: pointer;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  position: relative;
+}
+
+.mode-card:hover {
+  border-color: #b0b0b5;
+}
+
+.mode-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-card:has(input:checked) {
+  border: 2px solid var(--primary);
+  background: var(--canvas);
+  padding: 15px 17px; /* preserve optical height on 2px border */
+}
+
+.mode-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mode-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-radio-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--rounded-full);
+  border: 1.5px solid #d2d2d7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease;
+}
+
+.mode-card:has(input:checked) .mode-radio-indicator {
+  border-color: var(--primary);
+}
+
+.mode-card:has(input:checked) .mode-radio-indicator::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+}
+
+.mode-title-row strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+}
+
+.mode-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: var(--rounded-pill);
+  background: rgba(0, 102, 204, 0.08);
+  color: var(--primary);
+  margin-left: auto;
+}
+
+.mode-chip.fast {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink-muted-48);
+}
+
+.mode-content p {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  line-height: 1.42;
+  padding-left: 28px;
+}
+
+/* ============================================================================
+   PRIMARY ACTION BUTTON (button-primary: Action Blue Pill)
+   ========================================================================== */
+.btn-primary {
+  width: 100%;
+  padding: 13px 24px;
+  font-family: var(--font-family);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  cursor: pointer;
+  color: #ffffff;
+  background-color: var(--primary);
+  border: none;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  outline: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.94;
+}
+
+/* Apple rule: transform: scale(0.95) is the system-wide micro-interaction */
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* Progress Indicator */
+.progress {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-track {
+  height: 4px;
+  border-radius: var(--rounded-pill);
+  background: #e5e5ea;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress .bar {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: var(--rounded-pill);
+  background: var(--primary);
+  animation: apple-bar-slide 1.2s infinite ease-in-out;
+}
+
+@keyframes apple-bar-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+.progress-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+  animation: apple-dot-pulse 1.2s infinite;
+}
+
+.progress p {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  text-align: center;
+}
+
+/* Inline Error */
+.error {
+  margin-top: 16px;
+  color: #c91818;
+  background: #fdf2f2;
+  border: 1px solid #f8b4b4;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.privacy-callout {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--ink-muted-48);
+}
+
+.privacy-callout svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.privacy-callout .hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-muted-48);
+}
+
+/* ============================================================================
+   RIGHT PANEL: DIAGNOSTIC RESULTS
+   ========================================================================== */
+.panel-right {
+  min-height: 620px;
+}
+
+/* Empty State */
+.empty {
+  text-align: center;
+  padding: 64px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-graphic {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.reticle-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--rounded-full);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  position: relative;
+}
+
+.reticle-svg {
+  width: 64px;
+  height: 64px;
+}
+
+.scan-beam {
+  display: none; /* No artificial sci-fi lasers in Apple design */
+}
+
+.empty h3 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.empty-lead {
+  font-size: 17px;
+  color: var(--ink-muted-48);
+  max-width: 520px;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
+  margin-bottom: 36px;
+}
+
+.pipeline-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 580px;
+  text-align: left;
+}
+
+@media (max-width: 640px) {
+  .pipeline-features {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pf-item {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pf-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.pf-item strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.pf-item span {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+
+/* ============================================================================
+   ACTIVE RESULTS (Apple Product Gallery Aesthetics)
+   ========================================================================== */
+.results-section {
+  margin-top: 36px;
+}
+
+.section-title-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.section-title-wrap h3,
+.results-section h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.022em;
+}
+
+.section-badge {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+
+/* Verdict & Cancer Score Header */
+.verdict-row {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 680px) {
+  .verdict-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.verdict, .score-card {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.verdict-meta-top, .score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sub-label, .score-header small {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted-48);
+}
+
+.verdict-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--rounded-pill);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink-muted-80);
+}
+
+.verdict h2 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 6px 0 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+/* Verdict Risk Dynamic Colors */
+.verdict.low h2 { color: var(--accent-green); }
+.verdict.moderate h2 { color: var(--warn); }
+.verdict.high h2 { color: var(--danger); }
+
+.conf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted-48);
+}
+
+.conf-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.conf-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e5ea;
+  border-radius: var(--rounded-pill);
+  overflow: hidden;
+}
+
+.conf-bar div {
+  height: 100%;
+  width: 0;
+  border-radius: var(--rounded-pill);
+  background: var(--primary);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Score Card & Apple Minimal Gauge */
+.score-card {
+  align-items: center;
+  text-align: center;
+}
+
+.score-tooltip {
+  cursor: help;
+  color: var(--ink-muted-48);
+}
+
+.gauge {
+  position: relative;
+  width: 140px;
+  margin: 4px auto 0;
+}
+
+.gauge svg {
+  width: 100%;
+  display: block;
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: #e5e5ea;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.gauge-fg {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 157;
+  stroke-dashoffset: 157;
+  transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
+}
+
+.gauge strong {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.risk-wrap {
+  margin-top: 8px;
+}
+
+.risk {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: var(--rounded-pill);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.12px;
+}
+
+.risk.low {
+  background: rgba(52, 199, 89, 0.12);
+  color: #248a3d;
+}
+
+.risk.moderate {
+  background: rgba(255, 149, 0, 0.12);
+  color: #c77700;
+}
+
+.risk.high {
+  background: rgba(255, 59, 48, 0.12);
+  color: #d70015;
+}
+
+/* Telemetry Strip */
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.meta-chip {
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  padding: 6px 14px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+}
+
+.meta-chip strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Class Probability Distribution */
+.prob-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prow {
+  display: grid;
+  grid-template-columns: 210px 1fr 64px;
+  gap: 12px;
+  align-items: center;
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: border-color 0.15s ease;
+}
+
+.prow:hover {
+  border-color: #b0b0b5;
+}
+
+.prow.top {
+  background: #ffffff;
+  border-color: var(--primary);
+}
+
+.prow .nm {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prow .nm.mal {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.prow .tr {
+  height: 6px;
+  background: #e5e5ea;
+  border-radius: var(--rounded-pill);
+  overflow: hidden;
+}
+
+.prow .fl {
+  height: 100%;
+  width: 0;
+  border-radius: var(--rounded-pill);
+  background: var(--primary);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.prow.top .fl {
+  background: var(--danger);
+}
+
+.prow .pc {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Patch Statistics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.stat {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.stat b {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.stat span {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  display: block;
+  margin-top: 4px;
+}
+
+/* Visual Gallery (Product Renders with Apple Product Shadow) */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.gitem {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: zoom-in;
+  transition: border-color 0.2s ease;
+}
+
+.gitem:hover {
+  border-color: var(--primary);
+}
+
+.gitem img {
+  width: 100%;
+  height: 190px;
+  object-fit: contain;
+  background: #ffffff;
+  display: block;
+  box-shadow: var(--product-shadow);
+}
+
+.gitem p {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  border-top: 1px solid var(--hairline);
+  background: var(--surface-pearl);
+}
+
+/* Suspicious Patches */
+.patches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pitem {
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.pitem:hover {
+  border-color: #b0b0b5;
+}
+
+.pitem img {
+  width: 100%;
+  height: 125px;
+  object-fit: cover;
+  display: block;
+  cursor: zoom-in;
+  background: #ffffff;
+  box-shadow: var(--product-shadow);
+}
+
+.pitem .pi {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+
+.pitem .pi b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.pitem .pi .sc-high { color: var(--danger); font-weight: 600; }
+.pitem .pi .sc-med { color: var(--warn); font-weight: 600; }
+.pitem .pi .sc-low { color: var(--accent-green); font-weight: 600; }
+
+/* Suspicious Morphological Regions */
+.regions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.region {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+
+.region .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--rounded-full);
+  flex-shrink: 0;
+}
+
+.dot.HIGH { background: var(--danger); }
+.dot.MED { background: var(--warn); }
+.dot.LOW { background: var(--accent-green); }
+
+/* Disclaimer (Apple Human Interface Guidance Card) */
+.disclaimer-card {
+  margin-top: 36px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
+  padding: 16px 20px;
+  border-radius: 14px;
+}
+
+.disclaimer-icon {
+  color: var(--warn);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.disclaimer-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.disclaimer-text p {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   FOOTER (Parchment background, dense link leading 2.41)
+   ========================================================================== */
+.app-footer {
+  background: var(--canvas-parchment);
+  border-top: 1px solid var(--hairline);
+  padding: 32px 32px 48px;
+  font-size: 12px;
+  color: var(--ink-muted-48);
+  margin-top: auto;
+}
+
+.footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-specs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footer-sep {
+  opacity: 0.4;
+}
+
+/* ============================================================================
+   LIGHTBOX MODAL (Apple Backdrop Blur & Minimal Controls)
+   ========================================================================== */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.lb-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.lb-content {
+  position: relative;
+  z-index: 1001;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lb-close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  background: var(--surface-chip-translucent);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.lb-close:active {
+  transform: scale(0.95);
+}
+
+.lb-img-wrap {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lb-img-wrap img {
+  max-width: 88vw;
+  max-height: 72vh;
+  object-fit: contain;
+  display: block;
+}
+
+.lb-caption-bar {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.lb-caption-bar p {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.015em;
+}
+
+.lb-shortcut {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}

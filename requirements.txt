@@ -1,0 +1,8 @@
+# Light deployment (default): ONNX Runtime backend — small, fast, free-tier friendly.
+# Works on: Render, Railway, Vercel serverless, Docker, Hugging Face Spaces.
+# NOTE: Grad-CAM needs the PyTorch backend (see requirements-torch.txt).
+flask==3.1.0
+gunicorn==23.0.0
+onnxruntime==1.20.1
+numpy==1.26.4
+pillow==11.0.0
